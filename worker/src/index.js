@@ -6,9 +6,10 @@ const CORS = {
 const j = (d, s = 200) =>
   new Response(JSON.stringify(d), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const SYSTEM = (mem) =>
+const MODEL_OK = new Set(["@cf/qwen/qwen2.5-coder-32b-instruct", "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"]);
+const SYSTEM = (mem, mode) =>
   `You are Ashk AI, a smart, fast personal voice assistant. Now: ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST. ` +
-  `Reply in the user's language (Hinglish in Roman script if they use Hinglish). Keep replies short and natural since they are spoken aloud. No markdown, no emojis. ` +
+  `Reply in the user's language (Hinglish in Roman script if they use Hinglish). ${mode === "chat" ? "Give complete, detailed, well-structured answers in markdown (use code blocks for code). Be direct, practical and honest; skip needless disclaimers and lectures. Think step by step on hard problems. " : "Keep replies short and natural since they are spoken aloud. No markdown, no emojis. "}` +
   `Use tools when helpful: web_search for current facts or news, remember when the user asks you to remember something, phone tools to control the user's phone. Never invent tool results.` +
   (mem && mem.length ? ` Known about the user: ${mem.join("; ")}.` : "");
 
@@ -28,11 +29,11 @@ const TOOLS = [
 
 const MODELS = ["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.1-8b-instruct"];
 
-async function llm(env, body) {
-  for (const m of MODELS) {
+async function llm(env, body, pref) {
+  for (const m of pref ? [pref, ...MODELS] : MODELS) {
     try {
       const r = await env.AI.run(m, body);
-      if (r.response || (r.tool_calls && r.tool_calls.length)) return r;
+      if (r.response || r.choices?.[0]?.message?.content || (r.tool_calls && r.tool_calls.length)) return r;
     } catch (e) {}
   }
   throw new Error("saare models fail hue (free limit ho sakti hai)");
@@ -68,7 +69,7 @@ export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     const { pathname } = new URL(req.url);
-    if (pathname === "/") return j({ status: "Ashk AI online", v: 2 });
+    if (pathname === "/") return j({ status: "Ashk AI online", v: 3 });
     if (env.APP_KEY && req.headers.get("X-Key") !== env.APP_KEY) return j({ error: "galat key" }, 401);
     try {
       if (pathname === "/stt" && req.method === "POST") {
@@ -81,18 +82,19 @@ export default {
         return j({ text: r.text || "" });
       }
       if (pathname === "/chat" && req.method === "POST") {
-        const { messages, memory, tools } = await req.json();
+        const { messages, memory, tools, mode, model } = await req.json();
         const r = await llm(env, {
-          messages: [{ role: "system", content: SYSTEM(memory) }, ...messages.slice(-24)],
-          max_tokens: 400,
+          messages: [{ role: "system", content: SYSTEM(memory, mode) }, ...messages.slice(-24)],
+          max_tokens: mode === "chat" ? 2048 : 400,
           ...(tools ? { tools: TOOLS } : {}),
-        });
+        }, MODEL_OK.has(model) ? model : null);
         const tool_calls = (r.tool_calls || []).map((t) => {
           let a = t.arguments ?? t.function?.arguments ?? {};
           if (typeof a === "string") { try { a = JSON.parse(a); } catch { a = {}; } }
           return { name: t.name || t.function?.name, args: a };
         });
-        return j({ reply: r.response || "", tool_calls });
+        const text = r.response ?? r.choices?.[0]?.message?.content ?? "";
+        return j({ reply: text.replace(/<think>[\s\S]*?<\/think>/g, "").trim(), tool_calls });
       }
       if (pathname === "/tool" && req.method === "POST") {
         const { name, args = {} } = await req.json();

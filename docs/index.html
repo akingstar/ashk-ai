@@ -48,6 +48,7 @@ dialog input{width:100%}
 dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 dialog button{padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:#fff}
 dialog button.p{background:var(--ink);color:var(--pearl);border:0}
+.a{white-space:pre-wrap}pre{white-space:pre;overflow-x:auto;background:var(--ink);color:var(--pearl);padding:10px 12px;border-radius:8px;margin:6px 0}code{font-family:ui-monospace,Menlo,monospace;font-size:14px}.a>code,.a code{background:#e3ebee;padding:1px 5px;border-radius:5px}pre code{background:none;padding:0}dialog select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -62,6 +63,7 @@ dialog button.p{background:var(--ink);color:var(--pearl);border:0}
   <h2 style="font-size:20px">Settings</h2>
   <label for="url">Worker URL</label><input id="url" placeholder="https://ashk-ai-worker.xxxx.workers.dev">
   <label for="key">Key (agar deploy ke time ASHK_KEY set ki thi)</label><input id="key" type="password">
+  <label for="model">Model</label><select id="model"><option value="">Auto (Llama 3.3 70B)</option><option value="@cf/qwen/qwen2.5-coder-32b-instruct">Qwen Coder 32B (code ke liye)</option><option value="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b">DeepSeek R1 (gehri soch)</option></select>
   <div class="row"><button id="clr">Chat saaf karo</button><button class="p" id="save">Save</button></div>
 </dialog>
 <script>
@@ -70,7 +72,8 @@ const ls=(k,v)=>{try{return v===undefined?localStorage.getItem(k):localStorage.s
 let hist=JSON.parse(ls("hist")||"[]"),on=false,state="idle",stream;
 const HINT={idle:"Tap karke bolo",listening:"Sun raha hu... bolo",thinking:"Soch raha hu...",speaking:"Bol raha hu (rokne ke liye tap karo)"};
 function setState(s){state=s;$("#stage").dataset.s=s;$("#hint").textContent=HINT[s]}
-function add(cls,txt){const d=document.createElement("div");d.className="m "+cls;d.textContent=txt;$("#log").append(d);d.scrollIntoView({block:"end"})}
+function md(t){const e=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));return e(t).replace(/```(?:\w+)?\n?([\s\S]*?)```/g,(_,c)=>"<pre><code>"+c+"</code></pre>").replace(/`([^`\n]+)`/g,"<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g,"<b>$1</b>")}
+function add(cls,txt){const d=document.createElement("div");d.className="m "+cls;if(cls==="a")d.innerHTML=md(txt);else d.textContent=txt;$("#log").append(d);d.scrollIntoView({block:"end"})}
 function render(){$("#log").innerHTML="";if(!hist.length){$("#log").innerHTML='<p class="empty">Namaste, main Ashk AI hu. Orb dabao aur bolna shuru karo, ya neeche type karo.</p>'}hist.forEach(m=>add(m.role==="user"?"u":"a",m.content))}
 function err(e){add("e",String(e.message||e))}
 const cfg=()=>({url:(ls("url")||"").replace(/\/$/,""),key:ls("key")||""});
@@ -96,19 +99,19 @@ async function runTool(t){
   try{r=await fetch("http://127.0.0.1:8765/do",{method:"POST",headers:{"Content-Type":"application/json","X-Key":cfg().key},body:JSON.stringify({tool:n,args:a})})}
   catch(e){return "phone tools server chal nahi raha (Termux mein termux/server.py start karo)"}
   return await r.text()}
-async function agent(){
+async function agent(mode){
   const msgs=hist.slice(-20).map(m=>({role:m.role,content:m.content})),mem=facts();
   for(let i=0;i<4;i++){
-    const d=await api("/chat",{messages:msgs,memory:mem,tools:i<3});
+    const d=await api("/chat",{messages:msgs,memory:mem,tools:i<3,mode,model:ls("model")||""});
     if(!d.tool_calls||!d.tool_calls.length)return d.reply||"Samajh nahi aaya, dobara bolo.";
     for(const t of d.tool_calls){
       $("#hint").textContent="Tool: "+t.name;
       let out;try{out=await runTool(t)}catch(e){out="error: "+e.message}
-      msgs.push({role:"assistant",content:"(maine tool "+t.name+" chalaya)"},{role:"user",content:"Tool "+t.name+" ka result: "+String(out).slice(0,1500)+". Ab user ko chhota jawab do."})}}
+      msgs.push({role:"assistant",content:"(maine tool "+t.name+" chalaya)"},{role:"user",content:"Tool "+t.name+" ka result: "+String(out).slice(0,1500)+(mode==="chat"?". Ab user ko poora jawab do.":". Ab user ko chhota jawab do.")})}}
   return "Maaf karo, kaam poora nahi ho paya."}
 async function ask(text,voice){
   hist.push({role:"user",content:text});render();setState("thinking");
-  const reply=await agent();
+  const reply=await agent(voice?"voice":"chat");
   hist.push({role:"assistant",content:reply});hist=hist.slice(-40);ls("hist",JSON.stringify(hist));render();
   if(voice)await speak(reply);else setState("idle")}
 async function listen(){
@@ -147,8 +150,8 @@ $("#orb").onclick=()=>{
   loop()};
 $("#f").onsubmit=async e=>{e.preventDefault();const t=$("#t").value.trim();if(!t)return;$("#t").value="";
   try{await ask(t,false)}catch(x){err(x);setState("idle")}};
-$("#gear").onclick=()=>{$("#url").value=ls("url")||"";$("#key").value=ls("key")||"";$("#dlg").showModal()};
-$("#save").onclick=()=>{ls("url",$("#url").value.trim());ls("key",$("#key").value.trim());$("#dlg").close()};
+$("#gear").onclick=()=>{$("#url").value=ls("url")||"";$("#key").value=ls("key")||"";$("#model").value=ls("model")||"";$("#dlg").showModal()};
+$("#save").onclick=()=>{ls("url",$("#url").value.trim());ls("key",$("#key").value.trim());ls("model",$("#model").value);$("#dlg").close()};
 $("#clr").onclick=()=>{hist=[];ls("hist","[]");render();$("#dlg").close()};
 render();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});

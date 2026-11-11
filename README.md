@@ -9,3 +9,6 @@ Voice-first free AI assistant. Frontend: `docs/` (GitHub Pages). Backend: `worke
 ## v2: agent tools
 - Worker tools: web_search (Wikipedia, ya `export TAVILY_KEY=...` before deploy for better search), get_time. Memory: "yaad rakhna ..." bolo (browser mein save hoti hai).
 - Phone tools (torch, battery, vibrate, notify, open_url, location): Termux mein `pkg install python termux-api`, Termux:API app install karo, phir `ASHK_KEY=wahi-key python termux/server.py`.
+
+## v3
+Typed chat = detailed markdown answers (2048 tokens); orb/voice = short spoken answers. Settings mein Model chuno (Auto, Qwen Coder, DeepSeek R1).
