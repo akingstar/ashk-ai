@@ -25,6 +25,14 @@ const TOOLS = [
   { name: "notify", description: "Show a notification on the phone", parameters: P({ title: S, text: S }, ["text"]) },
   { name: "open_url", description: "Open a URL on the phone", parameters: P({ url: S }, ["url"]) },
   { name: "location", description: "Get the phone's current GPS location", parameters: P({}) },
+  { name: "vps_health", description: "Vicidial server health: load, RAM, disk, services, live channels", parameters: P({}) },
+  { name: "vici_agents", description: "Vicidial agents currently logged in", parameters: P({}) },
+  { name: "vici_campaigns", description: "List Vicidial campaigns with status", parameters: P({}) },
+  { name: "vici_hopper", description: "Leads in the hopper per campaign", parameters: P({}) },
+  { name: "vici_calls_today", description: "Calls made today per campaign", parameters: P({}) },
+  { name: "vici_campaign_active", description: "Turn a Vicidial campaign on (Y) or off (N)", parameters: P({ campaign_id: S, active: { type: "string", enum: ["Y", "N"] } }, ["campaign_id", "active"]) },
+  { name: "vici_add_dnc", description: "Add a phone number to the Vicidial DNC list", parameters: P({ phone: S }, ["phone"]) },
+  { name: "vps_cmd", description: "Run a shell command on the Vicidial server (user approval required)", parameters: P({ command: S }, ["command"]) },
 ];
 
 const MODELS = ["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.1-8b-instruct"];
@@ -69,7 +77,7 @@ export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     const { pathname } = new URL(req.url);
-    if (pathname === "/") return j({ status: "Ashk AI online", v: 3 });
+    if (pathname === "/") return j({ status: "Ashk AI online", v: 4 });
     if (env.APP_KEY && req.headers.get("X-Key") !== env.APP_KEY) return j({ error: "galat key" }, 401);
     try {
       if (pathname === "/stt" && req.method === "POST") {

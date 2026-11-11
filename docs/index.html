@@ -91,12 +91,15 @@ function speak(t){return new Promise(r=>{
   u.lang=/[\u0900-\u097F]/.test(t)?"hi-IN":"en-IN";
   u.onend=u.onerror=()=>r();speechSynthesis.speak(u)})}
 const facts=()=>{try{return JSON.parse(ls("facts")||"[]")}catch(e){return[]}};
+const RISKY=new Set(["vici_campaign_active","vici_add_dnc","vps_cmd"]);
 async function runTool(t){
   const n=t.name,a=t.args||{};
+  let ok=false;
+  if(RISKY.has(n)){ok=confirm("Ashk AI ye karna chahta hai:\n\n"+n+" "+JSON.stringify(a)+"\n\nAllow?");if(!ok)return "user ne mana kar diya"}
   if(n==="remember"){const f=facts();f.push(String(a.fact||""));ls("facts",JSON.stringify(f.slice(-50)));return "saved"}
   if(n==="web_search"||n==="get_time")return JSON.stringify(await api("/tool",{name:n,args:a}));
   let r;
-  try{r=await fetch("http://127.0.0.1:8765/do",{method:"POST",headers:{"Content-Type":"application/json","X-Key":cfg().key},body:JSON.stringify({tool:n,args:a})})}
+  try{r=await fetch("http://127.0.0.1:8765/do",{method:"POST",headers:{"Content-Type":"application/json","X-Key":cfg().key},body:JSON.stringify({tool:n,args:a,confirmed:ok})})}
   catch(e){return "phone tools server chal nahi raha (Termux mein termux/server.py start karo)"}
   return await r.text()}
 async function agent(mode){

@@ -12,3 +12,6 @@ Voice-first free AI assistant. Frontend: `docs/` (GitHub Pages). Backend: `worke
 
 ## v3
 Typed chat = detailed markdown answers (2048 tokens); orb/voice = short spoken answers. Settings mein Model chuno (Auto, Qwen Coder, DeepSeek R1).
+
+## v4 Vicidial control
+SSH key: ~/.ssh/ashk_vps. Start phone+VPS tools: `bash termux/start.sh`. Read tools run freely; campaign on/off, DNC add and vps_cmd ask for approval (browser confirm + server-side flag).
