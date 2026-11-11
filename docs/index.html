@@ -87,9 +87,28 @@ function speak(t){return new Promise(r=>{
   const u=new SpeechSynthesisUtterance(t.replace(/[*_#`]/g,""));
   u.lang=/[\u0900-\u097F]/.test(t)?"hi-IN":"en-IN";
   u.onend=u.onerror=()=>r();speechSynthesis.speak(u)})}
+const facts=()=>{try{return JSON.parse(ls("facts")||"[]")}catch(e){return[]}};
+async function runTool(t){
+  const n=t.name,a=t.args||{};
+  if(n==="remember"){const f=facts();f.push(String(a.fact||""));ls("facts",JSON.stringify(f.slice(-50)));return "saved"}
+  if(n==="web_search"||n==="get_time")return JSON.stringify(await api("/tool",{name:n,args:a}));
+  let r;
+  try{r=await fetch("http://127.0.0.1:8765/do",{method:"POST",headers:{"Content-Type":"application/json","X-Key":cfg().key},body:JSON.stringify({tool:n,args:a})})}
+  catch(e){return "phone tools server chal nahi raha (Termux mein termux/server.py start karo)"}
+  return await r.text()}
+async function agent(){
+  const msgs=hist.slice(-20).map(m=>({role:m.role,content:m.content})),mem=facts();
+  for(let i=0;i<4;i++){
+    const d=await api("/chat",{messages:msgs,memory:mem,tools:i<3});
+    if(!d.tool_calls||!d.tool_calls.length)return d.reply||"Samajh nahi aaya, dobara bolo.";
+    for(const t of d.tool_calls){
+      $("#hint").textContent="Tool: "+t.name;
+      let out;try{out=await runTool(t)}catch(e){out="error: "+e.message}
+      msgs.push({role:"assistant",content:"(maine tool "+t.name+" chalaya)"},{role:"user",content:"Tool "+t.name+" ka result: "+String(out).slice(0,1500)+". Ab user ko chhota jawab do."})}}
+  return "Maaf karo, kaam poora nahi ho paya."}
 async function ask(text,voice){
   hist.push({role:"user",content:text});render();setState("thinking");
-  const {reply}=await api("/chat",{messages:hist});
+  const reply=await agent();
   hist.push({role:"assistant",content:reply});hist=hist.slice(-40);ls("hist",JSON.stringify(hist));render();
   if(voice)await speak(reply);else setState("idle")}
 async function listen(){

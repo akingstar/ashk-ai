@@ -6,6 +6,7 @@ T="${CF_API_TOKEN:-$CLOUDFLARE_API_TOKEN}"; A="${CF_ACCOUNT_ID:-$CLOUDFLARE_ACCO
 cd "$(dirname "$0")/worker"
 B='{"type":"ai","name":"AI"}'
 [ -n "$ASHK_KEY" ] && B="$B,{\"type\":\"secret_text\",\"name\":\"APP_KEY\",\"text\":\"$ASHK_KEY\"}"
+[ -n "$TAVILY_KEY" ] && B="$B,{\"type\":\"secret_text\",\"name\":\"TAVILY_KEY\",\"text\":\"$TAVILY_KEY\"}"
 API="https://api.cloudflare.com/client/v4/accounts/$A/workers"
 curl -s -X PUT "$API/scripts/ashk-ai-worker" -H "Authorization: Bearer $T" \
   -F "metadata={\"main_module\":\"index.js\",\"compatibility_date\":\"2025-01-01\",\"bindings\":[$B]};type=application/json" \
