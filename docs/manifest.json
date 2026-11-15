@@ -1,1 +1,21 @@
-{"name":"Ashk AI","short_name":"Ashk AI","start_url":".","display":"standalone","background_color":"#EDF2F4","theme_color":"#EDF2F4","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "ASHK.AI — Free Multi-Agent AI Workspace",
+  "short_name": "ASHK.AI",
+  "description": "Free multi-agent AI workspace with automatic free-provider failover, squad mode and deep GitHub repository analysis.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#06070d",
+  "theme_color": "#06070d",
+  "categories": ["productivity", "developer", "utilities"],
+  "icons": [
+    { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Console", "url": "./#/console", "description": "Open the multi-agent console" },
+    { "name": "Repo analyzer", "url": "./#/analyzer", "description": "Analyze a GitHub repository" }
+  ]
+}
