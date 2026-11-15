@@ -91,7 +91,7 @@ Then open **Keys & settings → Custom route** and set:
 
 ASHK puts the custom route first, so requests never leave your machine. Local models have no
 rate limit, but they are slower and weaker than hosted models: `qwen2.5:0.5b` needs about 0.5 GB
-of free RAM, and a 7B model needs roughly 8 GB. Local requests get a 5-minute timeout instead of 75s.
+of free RAM, and a 7B model needs roughly 8 GB. Local requests get a 10-minute timeout instead of 75s.
 
 
 ## Agents and Squad

@@ -146,7 +146,7 @@ async function callOpenAI(provider, model, opts) {
   const headers = { "Content-Type": "application/json", ...(provider.headers || {}) };
   if (key) headers.Authorization = `Bearer ${key}`;
 
-  const timeoutMs = provider.id === "custom" ? 300000 : 75000;
+  const timeoutMs = provider.id === "custom" ? 600000 : 75000;
   const t = timeoutSignal(signal, timeoutMs);
   let res;
   try {
