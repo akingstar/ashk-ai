@@ -1,4 +1,4 @@
-const CACHE = "ashk-v13";
+const CACHE = "ashk-v14";
 const ASSETS = [
   "./",
   "index.html",

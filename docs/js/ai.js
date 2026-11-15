@@ -45,6 +45,11 @@ export function buildChain(settings) {
 function normalizeBase(base) {
   const b = String(base || "").trim().replace(/\/+$/, "");
   if (!b) throw new Error("Custom base URL missing");
+  return b;
+}
+
+function chatUrl(base) {
+  const b = String(base || "").trim().replace(/\/+$/, "");
   return /\/chat\/completions$/i.test(b) ? b : b + "/chat/completions";
 }
 
@@ -128,7 +133,7 @@ async function callOpenAI(provider, model, opts) {
   const { messages, system, temperature, maxTokens, onToken, signal, stream = true } = opts;
   const key = keyFor(provider, opts.settings);
   const base = provider.id === "custom" ? normalizeBase(opts.settings.custom.base) : provider.base;
-  const url = base.replace(/\/+$/, "") + "/chat/completions";
+  const url = chatUrl(base);
 
   const body = {
     model,
