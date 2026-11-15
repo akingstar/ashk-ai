@@ -146,7 +146,8 @@ async function callOpenAI(provider, model, opts) {
   const headers = { "Content-Type": "application/json", ...(provider.headers || {}) };
   if (key) headers.Authorization = `Bearer ${key}`;
 
-  const t = timeoutSignal(signal, 75000);
+  const timeoutMs = provider.id === "custom" ? 300000 : 75000;
+  const t = timeoutSignal(signal, timeoutMs);
   let res;
   try {
     res = await fetch(url, {
@@ -160,7 +161,7 @@ async function callOpenAI(provider, model, opts) {
     if (signal?.aborted) throw err;
     throw new Error(
       err?.name === "TimeoutError"
-        ? "timeout after 75s"
+        ? `timeout after ${Math.round(timeoutMs / 1000)}s`
         : "network or CORS blocked (" + (err?.message || "fetch failed") + ")"
     );
   }

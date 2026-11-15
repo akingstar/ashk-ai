@@ -74,6 +74,26 @@ use can return HTTP 429; adding a free key or running Ollama removes that ceilin
 You get as much usage as the upstream free tiers allow, automatically spread across providers.
 For genuinely no caps, run Ollama locally and add it as a custom route.
 
+### Unlimited local route with Ollama
+
+```bash
+ollama pull qwen2.5:0.5b
+setx OLLAMA_ORIGINS "https://akingstar.github.io"   # Windows; restart Ollama after
+```
+
+Then open **Keys & settings → Custom route** and set:
+
+| Field | Value |
+| --- | --- |
+| Base URL | `http://127.0.0.1:11434/v1` |
+| Model | `qwen2.5:0.5b` |
+| Key | empty |
+
+ASHK puts the custom route first, so requests never leave your machine. Local models have no
+rate limit, but they are slower and weaker than hosted models: `qwen2.5:0.5b` needs about 0.5 GB
+of free RAM, and a 7B model needs roughly 8 GB. Local requests get a 5-minute timeout instead of 75s.
+
+
 ## Agents and Squad
 
 Agents are system prompts with different temperatures and output contracts:

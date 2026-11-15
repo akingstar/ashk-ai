@@ -548,6 +548,27 @@
           <p class="doc-note">Limits checked against provider documentation in October 2026. Free tiers change without notice — that is exactly why ASHK routes across several.</p>
         </section>
 
+        <section class="card doc-section" id="doc-ollama">
+          <h2>Unlimited on your own machine (Ollama)</h2>
+          <p>A local model has no provider quota: requests never leave your PC. ASHK treats it as the first route in the chain.</p>
+          <ol class="steps-list">
+            <li>Install Ollama from <a href="https://ollama.com/download" target="_blank" rel="noopener">ollama.com/download</a>.</li>
+            <li>Pull a model that fits your RAM:
+              <pre><code>ollama pull qwen2.5:0.5b   # ~400 MB, runs on ~0.5 GB free RAM
+ollama pull qwen2.5:1.5b   # ~1 GB, needs ~1.5 GB free RAM</code></pre>
+            </li>
+            <li>Allow this site to call Ollama, then restart Ollama:
+              <pre><code>setx OLLAMA_ORIGINS "https://akingstar.github.io"</code></pre>
+            </li>
+            <li>Open <b>Keys &amp; settings → Custom route</b> and enter:
+              <pre><code>Base URL: http://127.0.0.1:11434/v1
+Model:    qwen2.5:0.5b
+Key:      (leave empty)</code></pre>
+            </li>
+          </ol>
+          <p class="doc-note">Small models run on a CPU but are noticeably weaker and slower than hosted models; a 7B model needs roughly 8 GB of free RAM. If your browser blocks the loopback call, serve the site locally or put Ollama behind HTTPS.</p>
+        </section>
+
         <section class="card doc-section" id="doc-limits">
           <h2>Honest limits</h2>
           <p><b>No hosted AI is truly unlimited.</b> Every provider caps requests, tokens or credits per day. ASHK.AI is free because it never owns a model: it composes free tiers behind one interface and fails over when one runs out.</p>
