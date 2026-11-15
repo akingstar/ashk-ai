@@ -169,6 +169,7 @@ function startNewChat() {
   $("#sidePanel")?.classList.remove("open");
   renderChat();
   updateModelChip();
+  resetUIHints();
   $("#input")?.focus();
 }
 
@@ -185,6 +186,7 @@ function openChat(id) {
   $("#sidePanel")?.classList.remove("open");
   renderChat();
   updateModelChip();
+  resetUIHints();
 }
 
 /* ------------------------------------------------------------------ */
@@ -1266,6 +1268,7 @@ function init() {
   renderChat();
   updateNet();
   route();
+  resetUIHints();
   if (state.settings.defaultAgent) $("#agentSelect").value = activeAgentId();
 }
 
