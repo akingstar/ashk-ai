@@ -6,7 +6,7 @@ Live site: **https://akingstar.github.io/ashk-ai/**
 Docs: [akingstar.github.io/ashk-ai/#/docs](https://akingstar.github.io/ashk-ai/#/docs)
 
 ASHK.AI is an open-source, client-side AI console. It routes your prompt across several free AI
-providers, fails over automatically when one is rate-limited, and gives you six specialist agents,
+providers, fails over automatically when one is rate-limited, and gives you seven specialist agents,
 a multi-agent Squad pipeline and a GitHub repository analyzer. No account, no card, no ASHK backend
 for chat. Your keys never leave `localStorage`.
 
@@ -20,7 +20,7 @@ for chat. Your keys never leave `localStorage`.
 - **Automatic free-route failover** — BYOK providers first, then an optional self-hosted gateway,
   then keyless pools. Streaming SSE, 75-second timeout, provider skipping on auth errors and model
   fallback on rate limits.
-- **Six specialist agents + Auto** — Planner, Researcher, Coder, Analyst, Writer and Critic, each
+- **Seven specialist agents + Auto** — Start (Claude Code-style coding agent), Planner, Researcher, Coder, Analyst, Writer and Critic, each
   with its own temperature and output contract. Auto picks the best fit locally, with no extra call.
 - **Squad mode** — Plan → Build → Critique → Final. Four model calls for work where quality matters
   more than quota.
