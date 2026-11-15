@@ -1,4 +1,4 @@
-const CACHE = "ashk-v5";
+const CACHE = "ashk-v7";
 const ASSETS = [
   "./",
   "index.html",
@@ -12,6 +12,10 @@ const ASSETS = [
   "js/store.js",
   "assets/favicon.svg",
   "assets/logo.svg",
+  "assets/icon-192.png",
+  "assets/icon-512.png",
+  "assets/icon-maskable-512.png",
+  "assets/apple-touch-icon.png",
   "icon.svg",
   "legacy.html",
 ];

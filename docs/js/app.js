@@ -364,7 +364,7 @@ function renderChain() {
   const routeState = $("#routeState");
   if (routeState && !state.busy) {
     routeState.className = "run-live" + (ready ? " ok" : " err");
-    routeState.innerHTML = `<span class="dot"></span> ${ready === 1 ? "1 ready" : ready ? ready + " ready" : "no route"}`;
+    routeState.innerHTML = `<span class="dot"></span> ${ready === 1 ? "1 route" : ready ? ready + " routes" : "no route"}`;
   }
   updateModelChip();
 }
@@ -420,7 +420,7 @@ function updateModelChip() {
   }
   const ready = buildChain(state.settings).length;
   chip.className = "chip" + (ready ? "" : " warn");
-  chip.innerHTML = `<span class="dot"></span> ${ready === 1 ? "1 route ready" : ready + " routes ready"}`;
+  chip.innerHTML = `<span class="dot"></span> ${ready === 1 ? "1 route configured" : ready + " routes configured"}`;
 }
 
 /* ------------------------------------------------------------------ */
