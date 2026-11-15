@@ -220,7 +220,7 @@ function emptyState() {
   return `<div class="empty-state">
     <div class="empty-orb">${ICON("spark")}</div>
     <h3>What should ASHK do?</h3>
-    <p>Ask anything, paste code, or start a squad run for a hard problem. The free route is already live — no key needed.</p>
+    <p>Ask anything, paste code, or start a squad run for a hard problem. The keyless route is ready — if the shared pool is busy, add a free key in settings.</p>
     <div class="prompt-grid">
       ${QUICK_PROMPTS.slice(0, 4)
         .map((p) => `<button type="button" data-prompt="${escapeAttr(p)}">${escapeHtml(p)}</button>`)
