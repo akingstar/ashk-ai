@@ -216,11 +216,26 @@ function renderChat() {
   }
 }
 
+function routeInfo() {
+  const chain = buildChain(state.settings);
+  return {
+    chain,
+    local: chain.find((p) => p.id === "custom") || null,
+    model: state.settings.custom?.model || "",
+  };
+}
+
 function emptyState() {
+  const { chain, local, model } = routeInfo();
+  const lead = local
+    ? `<b>Local route ready.</b> ${escapeHtml(model || "Your model")} runs on this machine — no key, no quota.`
+    : chain.length
+      ? `<b>${chain.length} route${chain.length === 1 ? "" : "s"} ready</b> with automatic failover.`
+      : `<b>No route yet.</b> Add a free key, or point the custom route at Ollama in settings.`;
   return `<div class="empty-state">
     <div class="empty-orb">${ICON("spark")}</div>
     <h3>What should ASHK do?</h3>
-    <p>Ask anything, paste code, or start a squad run for a hard problem. The keyless route is ready — if the shared pool is busy, add a free key in settings.</p>
+    <p>Ask anything, paste code, or start a squad run for a hard problem. ${lead}</p>
     <div class="prompt-grid">
       ${QUICK_PROMPTS.slice(0, 4)
         .map((p) => `<button type="button" data-prompt="${escapeAttr(p)}">${escapeHtml(p)}</button>`)
@@ -255,7 +270,11 @@ function messageHtml(msg) {
   const providerBadge = msg.provider
     ? `<span class="msg-badge provider">${escapeHtml(msg.provider)}${msg.model ? " · " + escapeHtml(msg.model) : ""}</span>`
     : "";
-  const msBadge = msg.ms ? `<span class="msg-badge">${(msg.ms / 1000).toFixed(1)}s</span>` : "";
+  const msBadge = msg.ms
+    ? `<span class="msg-badge">${(msg.ms / 1000).toFixed(1)}s</span>`
+    : msg.streaming
+      ? `<span class="msg-badge" data-elapsed="${msg.id}">${Math.max(0, Math.round((Date.now() - (msg.startedAt || msg.at)) / 1000))}s</span>`
+      : "";
   const body = msg.content
     ? renderMarkdown(msg.content)
     : `<span class="typing"><i></i><i></i><i></i></span>`;
@@ -330,6 +349,10 @@ function updateMessageDom(msg) {
   }
   const card = target?.closest(".assistant-card");
   if (card) card.classList.toggle("streaming", Boolean(msg.streaming));
+  const timer = document.querySelector(`[data-elapsed="${msg.id}"]`);
+  if (timer && msg.streaming) {
+    timer.textContent = `${Math.max(0, Math.round((Date.now() - (msg.startedAt || msg.at)) / 1000))}s`;
+  }
   const chips = document.querySelector(`[data-steps="${msg.id}"]`);
   if (chips && msg.steps) {
     chips.innerHTML = msg.steps
@@ -350,12 +373,20 @@ function renderChain() {
   const wrap = $("#chainList");
   if (!wrap) return;
   const list = providerStatus(state.settings);
+  const needsText = (p) =>
+    p.id === "custom"
+      ? "set URL + model"
+      : p.id === "worker"
+        ? "set gateway URL"
+        : p.keyless
+          ? "enable in settings"
+          : "add key";
   wrap.innerHTML = list
     .map(
-      (p) => `<div class="chain-item ${p.ready ? "" : "disabled"}" data-provider="${p.id}" title="${escapeAttr(p.ready ? p.note : "Add a free key in settings")}">
+      (p) => `<div class="chain-item ${p.ready ? "" : "disabled"}" data-provider="${p.id}" title="${escapeAttr(p.ready ? p.note : needsText(p))}">
         <span class="dot"></span>
         <span class="label">${escapeHtml(p.label)}</span>
-        <span class="model">${escapeHtml(p.ready ? p.model : "add key")}</span>
+        <span class="model">${escapeHtml(p.ready ? p.model : needsText(p))}</span>
       </div>`
     )
     .join("");
@@ -473,6 +504,7 @@ async function runAssistant(task) {
     provider: "",
     model: "",
     streaming: true,
+    startedAt: Date.now(),
     steps: squad ? SQUAD.map((s) => ({ key: s.key, label: s.label, status: "pending", ms: 0 })) : null,
   };
   chat.messages.push(msg);
@@ -483,6 +515,10 @@ async function runAssistant(task) {
 
   state.controller = new AbortController();
   const outer = state.controller.signal;
+  const elapsedTimer = setInterval(() => {
+    const el = document.querySelector(`[data-elapsed="${msg.id}"]`);
+    if (el) el.textContent = `${Math.round((Date.now() - msg.startedAt) / 1000)}s`;
+  }, 1000);
 
   let frame = 0;
   const paint = () => {
@@ -539,17 +575,18 @@ async function runAssistant(task) {
         msg.content += `\n\n> Route error: ${err.message}`;
         persist();
         renderChat();
-        toast("Every free route failed. Add a key in settings.", true);
+        toast("All routes failed. Check Keys & settings or retry.", true);
       } else {
         chat.messages = chat.messages.filter((m) => m.id !== msg.id);
         chat.messages.push({ id: uid("e"), role: "error", content: err.message, at: Date.now() });
         persist();
         renderChat();
-        toast("Every free route failed.", true);
+        toast("All routes failed. Check Keys & settings or retry.", true);
       }
       setRouteState("err", "all failed");
     }
   } finally {
+    clearInterval(elapsedTimer);
     state.controller = null;
     setBusy(false);
     renderChat();
@@ -650,9 +687,13 @@ function setBusy(busy) {
 }
 
 function resetUIHints() {
-  const ready = buildChain(state.settings).length;
-  $("#composerHint").textContent = ready ? "Free route · auto-failover" : "No route · add a free key";
-  if (ready) setRouteState("ok", "standby");
+  const { chain, local, model } = routeInfo();
+  $("#composerHint").textContent = local
+    ? `Local route · ${model || "on-device model"}`
+    : chain.length
+      ? `${chain.length} route${chain.length === 1 ? "" : "s"} · auto-failover`
+      : "No route · add a free key or local URL";
+  if (chain.length) setRouteState("ok", "standby");
 }
 
 /* ------------------------------------------------------------------ */
@@ -848,12 +889,27 @@ function clearData() {
 /* analyzer                                                            */
 /* ------------------------------------------------------------------ */
 
-function analyzerStatus(message, isError = false) {
+let analyzerStage = "";
+let analyzerStarted = 0;
+let analyzerFailed = false;
+let analyzerTimer = null;
+
+function paintAnalyzerStatus() {
   const el = $("#analyzerStatus");
   if (!el) return;
   el.hidden = false;
-  el.className = "analyzer-status" + (isError ? " error" : "");
-  el.innerHTML = `<span class="dot"></span><span>${escapeHtml(message)}</span>`;
+  el.className = "analyzer-status" + (analyzerFailed ? " error" : "");
+  const elapsed =
+    state.analyzing && !analyzerFailed && analyzerStarted
+      ? ` · ${Math.round((Date.now() - analyzerStarted) / 1000)}s`
+      : "";
+  el.innerHTML = `<span class="dot"></span><span>${escapeHtml(analyzerStage + elapsed)}</span>`;
+}
+
+function analyzerStatus(message, isError = false) {
+  analyzerStage = message;
+  analyzerFailed = isError;
+  paintAnalyzerStatus();
 }
 
 function analyzerReportHtml(bundle, aiText) {
@@ -921,6 +977,10 @@ async function analyzeRepo(event) {
   const btn = $("#analyzeBtn");
   const result = $("#analyzerResult");
   state.analyzing = true;
+  analyzerStarted = Date.now();
+  analyzerFailed = false;
+  clearInterval(analyzerTimer);
+  analyzerTimer = setInterval(paintAnalyzerStatus, 1000);
   btn.disabled = true;
   btn.dataset.label = btn.innerHTML;
   btn.innerHTML = `${ICON("refresh")} Analyzing…`;
@@ -954,6 +1014,9 @@ async function analyzeRepo(event) {
 
     result.innerHTML = analyzerReportHtml(bundle, ai.text);
     result.hidden = false;
+    clearInterval(analyzerTimer);
+    analyzerTimer = null;
+    state.analyzing = false;
     analyzerStatus(`Deep analysis complete · ${ai.provider.short} · ${ai.model} · ${(ai.ms / 1000).toFixed(1)}s`);
     result.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#analyzerStatus").hidden = false;
@@ -961,6 +1024,8 @@ async function analyzeRepo(event) {
     analyzerStatus(err.message || String(err), true);
     toast("Analysis failed.", true);
   } finally {
+    clearInterval(analyzerTimer);
+    analyzerTimer = null;
     state.analyzing = false;
     btn.disabled = false;
     btn.innerHTML = btn.dataset.label || `${ICON("spark")} Run deep analysis`;

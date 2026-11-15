@@ -337,7 +337,7 @@ export async function chatWithFailover({
     .map((f) => `${f.provider}: ${f.error}`)
     .join(" · ");
   const error = new Error(
-    "All free routes failed." + (summary ? " " + summary + "." : "") + " Add a free key in settings for more headroom."
+    "All routes failed." + (summary ? " " + summary + "." : "") + " Add a key or a local route in settings for more headroom."
   );
   error.failures = failures;
   throw error;
