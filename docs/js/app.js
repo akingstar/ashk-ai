@@ -592,6 +592,9 @@ async function runAssistant(task) {
     state.controller = null;
     setBusy(false);
     renderChat();
+    if (!outer.aborted && msg.ms) {
+      $("#composerHint").textContent = `Answered by ${state.lastRoute?.provider || msg.provider || "route"} in ${(msg.ms / 1000).toFixed(1)}s`;
+    }
     $("#input")?.focus();
   }
 }
@@ -895,6 +898,7 @@ let analyzerStage = "";
 let analyzerStarted = 0;
 let analyzerFailed = false;
 let analyzerTimer = null;
+let analyzerController = null;
 
 function paintAnalyzerStatus() {
   const el = $("#analyzerStatus");
@@ -977,15 +981,18 @@ async function analyzeRepo(event) {
   }
 
   const btn = $("#analyzeBtn");
+  const stopBtn = $("#analyzeStop");
   const result = $("#analyzerResult");
   state.analyzing = true;
   analyzerStarted = Date.now();
   analyzerFailed = false;
   clearInterval(analyzerTimer);
   analyzerTimer = setInterval(paintAnalyzerStatus, 1000);
+  analyzerController = new AbortController();
   btn.disabled = true;
   btn.dataset.label = btn.innerHTML;
   btn.innerHTML = `${ICON("refresh")} Analyzing…`;
+  if (stopBtn) stopBtn.hidden = false;
   result.hidden = true;
   analyzerStatus("Fetching repository metadata from the public GitHub API…");
 
@@ -1000,6 +1007,7 @@ async function analyzeRepo(event) {
       system: ANALYSIS_SYSTEM,
       temperature: 0.35,
       maxTokens: 1800,
+      signal: analyzerController.signal,
       onEvent: (ev) => {
         if (ev.type === "try") analyzerStatus(`Trying ${ev.provider.short} · ${ev.model}…`);
         else if (ev.type === "fail") analyzerStatus(`${ev.provider.short} failed (${ev.error}). Failing over…`);
@@ -1023,12 +1031,21 @@ async function analyzeRepo(event) {
     result.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#analyzerStatus").hidden = false;
   } catch (err) {
-    analyzerStatus(err.message || String(err), true);
-    toast("Analysis failed.", true);
+    if (analyzerController?.signal.aborted) {
+      clearInterval(analyzerTimer);
+      analyzerTimer = null;
+      state.analyzing = false;
+      analyzerStatus("Analysis stopped.");
+    } else {
+      analyzerStatus(err.message || String(err), true);
+      toast("Analysis failed.", true);
+    }
   } finally {
     clearInterval(analyzerTimer);
     analyzerTimer = null;
     state.analyzing = false;
+    analyzerController = null;
+    if (stopBtn) stopBtn.hidden = true;
     btn.disabled = false;
     btn.innerHTML = btn.dataset.label || `${ICON("spark")} Run deep analysis`;
   }
@@ -1200,6 +1217,7 @@ function bind() {
   });
 
   $("#repoForm")?.addEventListener("submit", analyzeRepo);
+  $("#analyzeStop")?.addEventListener("click", () => analyzerController?.abort());
   $("#repoExamples")?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-repo]");
     if (btn) {
