@@ -326,11 +326,12 @@ export async function chatWithFailover({
   }
 
   const summary = failures
+    .filter((f, i, arr) => arr.findIndex((x) => x.provider === f.provider) === i)
     .slice(0, 4)
     .map((f) => `${f.provider}: ${f.error}`)
     .join(" · ");
   const error = new Error(
-    "All free routes failed." + (summary ? " " + summary : "") + " Add a free key in settings for more headroom."
+    "All free routes failed." + (summary ? " " + summary + "." : "") + " Add a free key in settings for more headroom."
   );
   error.failures = failures;
   throw error;

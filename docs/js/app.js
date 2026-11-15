@@ -1074,18 +1074,20 @@ function bind() {
   });
 
   $("#agentSelect")?.addEventListener("change", (e) => {
+    const agentId = e.target.value;
     ensureChat();
-    state.activeChat.agent = e.target.value;
+    state.activeChat.agent = agentId;
     persist();
     renderChat();
-    toast(`Agent: ${AGENTS[e.target.value]?.name || "Auto"}`);
+    toast(`Agent: ${AGENTS[agentId]?.name || "Auto"}`);
   });
   $("#squadToggle")?.addEventListener("change", (e) => {
+    const enabled = e.target.checked;
     ensureChat();
-    state.activeChat.squad = e.target.checked;
+    state.activeChat.squad = enabled;
     persist();
     renderChat();
-    if (e.target.checked) {
+    if (enabled) {
       $("#squadSteps").innerHTML = `<li class="timeline-empty">Squad will run plan → build → critique → final.</li>`;
       toast("Squad mode on: four agents, about 4x tokens.");
     } else {

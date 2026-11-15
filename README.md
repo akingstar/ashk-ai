@@ -58,8 +58,8 @@ No dependencies, no build step. Any static server works.
 
 | Route | Free allowance | You need | Best for |
 | --- | --- | --- | --- |
-| **LLM7 Free** (keyless) | 10 requests/min anonymous; turbo models | Nothing | Instant chat, demos, repo reviews |
-| **Pollinations** (keyless fallback) | Best effort, one request per IP at a time | Nothing | Backup keyless route |
+| **LLM7 Free** (keyless) | 10 requests/min anonymous; daily token cap per IP | Nothing | Instant chat, demos, repo reviews |
+| **Pollinations** (keyless fallback) | Best effort; browser requests may hit Turnstile | Nothing | Backup keyless route |
 | **Google Gemini** | Free Flash tiers | Free AI Studio key | Long context, general work |
 | **Groq** | ~30 RPM, ~1,000 requests/day | Free key | Very fast short prompts |
 | **OpenRouter** | ~20 RPM, ~50 requests/day on `:free` | Free key | Model variety |
@@ -188,8 +188,10 @@ secret, and test changes outside dialing hours.
 
 ## Status and limits
 
-- The keyless pool was verified end-to-end in November 2026. Heavy or shared-IP use can return
-  HTTP 429; add free keys for reliable daily use.
+- The keyless LLM7 pool was verified end-to-end in November 2026. It enforces per-minute and daily
+  token limits on shared IPs; observed 429 cooldowns ranged from seconds to about an hour.
+  Pollinations may reject browser requests with `403 Missing Turnstile token`. Add a free key for
+  reliable daily use.
 - Free providers can change endpoints, models or quotas without notice. The router handles failures,
   but a dead provider means fewer routes until its configuration is updated.
 - The analyzer reads only public GitHub data and does not execute repository code.
